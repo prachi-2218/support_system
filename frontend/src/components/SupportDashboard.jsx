@@ -48,14 +48,14 @@ export default function SupportDashboard() {
         </header>
 
         <main>
-          <TicketList tickets={tickets} refresh={fetchTickets} loading={loading} />
+          <TicketList tickets={tickets} setTickets={setTickets} loading={loading} />
         </main>
 
         {showModal && (
           <div className="fixed inset-0  bg-opacity-10 backdrop-blur-md flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-2xl shadow-xl border border-black-400 max-w-md w-full max-h-[90vh] overflow-y-auto">
               <TicketForm 
-                refresh={fetchTickets} 
+                setTickets={setTickets}
                 onClose={() => setShowModal(false)}
                 isModal={true}
               />

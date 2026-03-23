@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createTicket } from "../services/api";
 
-export default function TicketForm({ refresh, onClose, isModal = false }) {
+export default function TicketForm({ setTickets, onClose, isModal = false }) {
   const [form, setForm] = useState({
     subject: "",
     message: "",
@@ -16,15 +16,34 @@ export default function TicketForm({ refresh, onClose, isModal = false }) {
     }
     
     setIsSubmitting(true);
+       // Create optimistic ticket with temporary ID
+    const optimisticTicket = {
+      ...form,
+      _id: `temp-${Date.now()}`, // Temporary ID
+      status: "NEW",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Optimistically add to local state
+    setTickets(prev => [optimisticTicket, ...prev]);
+    
     try {
-      await createTicket(form);
+      const response = await createTicket(form);
+      // Replace optimistic ticket with real server data
+      setTickets(prev => prev.map(ticket => 
+        ticket._id === optimisticTicket._id ? response.data : ticket
+      ));
+      
       setForm({ subject: "", message: "", priority: "Low" });
-      refresh();
+      
       if (isModal && onClose) {
         onClose();
       }
     } catch (error) {
       console.error("Failed to create ticket:", error);
+      // Remove optimistic ticket on error
+      setTickets(prev => prev.filter(ticket => ticket._id !== optimisticTicket._id));
     } finally {
       setIsSubmitting(false);
     }

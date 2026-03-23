@@ -37,15 +37,32 @@ const priorityConfig = {
   },
 };
 
-export default function TicketList({ tickets, refresh, loading }) {
+export default function TicketList({ tickets, setTickets, loading }) {
   const [expandedMessages, setExpandedMessages] = useState(new Set());
 
   const handleStatusChange = async (id, status) => {
+    // Find the original ticket for potential rollback
+    const originalTicket = tickets.find(t => t._id === id);
+    
+    // Optimistically update local state
+    setTickets(prev => prev.map(ticket => 
+      ticket._id === id ? { ...ticket, status } : ticket
+    ));
+    
     try {
-      await updateTicket(id, status);
-      refresh();
-    } catch (error) {
+      // Sync with server and get updated data
+      const response = await updateTicket(id, status);
+      // Update with server response (includes any server-side changes)
+      setTickets(prev => prev.map(ticket => 
+        ticket._id === id ? response.data : ticket
+      ));
+    }
+    catch (error) {
       console.error("Failed to update ticket:", error);
+      // Revert to original state on error
+      setTickets(prev => prev.map(ticket => 
+        ticket._id === id ? originalTicket : ticket
+      ));
     }
   };
 
